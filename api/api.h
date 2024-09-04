@@ -41,6 +41,7 @@ enum API_PACKET {
 #define API_PACKET_ID_UNKNOWN (-3)
 #define API_SOCKET_OPERATION_FAIL (-4)
 
+uint32_t api_get_version();
 HRESULT api_init(const char* config_filename);
 void api_stop();
 int api_parse(enum API_PACKET id, uint8_t len, const uint8_t* data);

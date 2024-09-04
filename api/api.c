@@ -38,6 +38,10 @@ static uint8_t api_vfd_string[200];
 static bool api_card_reader_blocked = false;
 static bool api_card_reader_blocked_switch = false;
 
+uint32_t api_get_version(){
+    return 0x010101;
+}
+
 HRESULT api_init(const char* config_filename) {
 
     WSADATA wsa;

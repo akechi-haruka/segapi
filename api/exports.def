@@ -1,6 +1,7 @@
 LIBRARY segapi
 
 EXPORTS
+    api_get_version
 	api_init
 	api_stop
 	api_send
