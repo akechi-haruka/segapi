@@ -92,7 +92,7 @@ HRESULT api_init(const char* config_filename) {
     setsockopt(send_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(send_socket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt));
     send_addr.sin_family = AF_INET;
-    send_addr.sin_port = 0;
+    send_addr.sin_port = htons(api_cfg.port);
     send_addr.sin_addr.s_addr = inet_addr(api_cfg.bindAddr);
 
     threadExitFlag = false;
