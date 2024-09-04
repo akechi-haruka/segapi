@@ -1,0 +1,19 @@
+LIBRARY segapi
+
+EXPORTS
+	api_init
+	api_stop
+	api_send
+	api_get_card_switch_state
+	api_get_card_reading_state_and_clear_switch_state
+	api_block_card_reader
+	api_get_aime_rgb_and_clear
+	api_get_and_clear_credits
+	api_get_and_clear_service
+	api_get_and_clear_test
+	api_get_and_clear_card_mifare
+	api_get_and_clear_card_felica
+	api_get_and_clear_sequence
+	api_get_and_clear_vfd_message
+	api_get_reader_blocked_switch_state
+	api_get_reader_blocked_and_clear_switch_state
