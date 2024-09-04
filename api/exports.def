@@ -18,3 +18,5 @@ EXPORTS
 	api_get_and_clear_vfd_message
 	api_get_reader_blocked_switch_state
 	api_get_reader_blocked_and_clear_switch_state
+	api_send_vfd
+	api_send_vfd_sj
