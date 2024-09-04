@@ -369,3 +369,13 @@ bool api_get_reader_blocked_switch_state(){
 bool api_get_reader_blocked_and_clear_switch_state(){
     return api_card_reader_blocked;
 }
+
+void api_send_vfd(const wchar_t* string){
+    char str[1024];
+    wcstombs(str, string, 1024);
+    api_send(PACKET_29_VFD, strlen(str), (uint8_t*)str);
+}
+
+void api_send_vfd_sj(const char* string){
+    api_send(PACKET_30_VFD_SHIFTJIS, strlen(string), (uint8_t*)string);
+}
