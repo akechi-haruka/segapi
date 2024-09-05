@@ -237,7 +237,7 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             break;
         case PACKET_34_EXIT:
             dprintf("API: Received Exit packet!\n");
-            ExitProcess(0);
+            TerminateProcess(GetCurrentProcess(), PACKET_34_EXIT);
             break;
         default:
             return API_PACKET_ID_UNKNOWN;
