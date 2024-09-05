@@ -235,6 +235,10 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             api_aime_rgb[2] = data[2];
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
+        case PACKET_34_EXIT:
+            dprintf("API: Received Exit packet!\n");
+            ExitProcess(0);
+            break;
         default:
             return API_PACKET_ID_UNKNOWN;
     }
