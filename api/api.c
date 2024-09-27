@@ -71,6 +71,11 @@ HRESULT api_init(const char* config_filename) {
         return E_FAIL;
     }
 
+    if (api_cfg.port == 0){
+        dprintf("API: port is null??\n");
+        return E_FAIL;
+    }
+
     const char opt = 1;
     setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(listen_socket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt));
