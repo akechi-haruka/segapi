@@ -11,7 +11,7 @@
 
 static struct api_config api_cfg;
 
-static DWORD api_socket_thread_proc(LPVOID ctx);
+static __stdcall DWORD api_socket_thread_proc(LPVOID ctx);
 
 static HANDLE api_socket_thread;
 static SOCKET listen_socket = INVALID_SOCKET;
