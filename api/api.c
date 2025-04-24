@@ -106,7 +106,7 @@ HRESULT api_init(const char* config_filename) {
     return S_OK;
 }
 
-DWORD api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
+DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
     struct sockaddr_in sender_addr;
     int sender_addr_size = sizeof(sender_addr);
 
