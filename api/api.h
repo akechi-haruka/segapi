@@ -206,3 +206,15 @@ void api_send_vfd_w(const wchar_t* string, int len);
  * @param len The length of the string.
  */
 void api_send_vfd_sj(const char* string, int len);
+
+/**
+ *
+ * @return Returns true if a PACKET_35_INPUT_BLOCK_STATE was received.
+ */
+bool api_has_input_block_state();
+
+/**
+ *
+ * @return Returns the value of PACKET_35_INPUT_BLOCK_STATE if one was received and clears its receive flag.
+ */
+bool api_get_input_block_state_and_clear();
