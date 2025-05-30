@@ -373,7 +373,11 @@ bool api_get_reader_blocked_and_clear_switch_state() {
     return api_card_reader_blocked;
 }
 
-void api_send_vfd(const wchar_t* string, const int len) {
+void api_send_vfd(const char* string, const int len) {
+    api_send(PACKET_29_VFD, len, string);
+}
+
+void api_send_vfd_w(const wchar_t* string, const int len) {
     char str[1024];
     wcstombs(str, string, 1024);
     api_send(PACKET_29_VFD, len, str);
