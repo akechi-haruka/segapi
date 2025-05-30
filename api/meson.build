@@ -19,3 +19,8 @@ api_lib = shared_library(
         'util.h',
     ],
 )
+
+api_dep = declare_dependency(
+    link_with : api_lib,
+    include_directories : inc,
+)
