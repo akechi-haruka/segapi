@@ -2,7 +2,7 @@
 
 #include "dprintf.h"
 
-BOOL WINAPI DllMain(__attribute__((unused)) HMODULE mod, DWORD cause, __attribute__((unused)) void *ctx) {
+BOOL WINAPI DllMain([[maybe_unused]] HMODULE mod, DWORD cause, [[maybe_unused]] void *ctx) {
 
     if (cause != DLL_PROCESS_ATTACH) {
         return TRUE;

@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <process.h>
+#include <stdlib.h>
 
 #include "api/api.h"
 #include "api/config.h"
@@ -122,7 +123,7 @@ bool api_is_initialized() {
     return ec == STILL_ACTIVE;
 }
 
-DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
+DWORD __stdcall api_socket_thread_proc([[maybe_unused]] LPVOID ctx) {
     struct sockaddr_in sender_address;
     int sender_addr_size = sizeof(sender_address);
 
@@ -130,7 +131,7 @@ DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
     uint8_t buf[PACKET_MAX_SIZE];
 
     while (!thread_exit_flag) {
-        if (recvfrom(listen_socket, buf, PACKET_MAX_SIZE, 0, (SOCKADDR *) &sender_address, &sender_addr_size) != SOCKET_ERROR) {
+        if (recvfrom(listen_socket, (char*)buf, PACKET_MAX_SIZE, 0, (SOCKADDR *) &sender_address, &sender_addr_size) != SOCKET_ERROR) {
             const uint8_t id = buf[PACKET_HEADER_FIELD_ID];
             const uint8_t group = buf[PACKET_HEADER_FIELD_GROUPID];
             const uint8_t device = buf[PACKET_HEADER_FIELD_MACHINEID];
@@ -283,7 +284,7 @@ int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     packet[PACKET_HEADER_FIELD_LEN] = len;
     memcpy(packet + PACKET_HEADER_LEN, data, len);
 
-    if (sendto(send_socket, packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address)) ==
+    if (sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address)) ==
         SOCKET_ERROR) {
         dprintf("segapi: sendto failed with error: %d\n", WSAGetLastError());
         return API_SOCKET_OPERATION_FAIL;
@@ -384,13 +385,13 @@ bool api_get_reader_blocked_and_clear_switch_state() {
 }
 
 void api_send_vfd(const char* string, const int len) {
-    api_send(PACKET_29_VFD, len, string);
+    api_send(PACKET_29_VFD, len, (uint8_t*)string);
 }
 
 void api_send_vfd_w(const wchar_t* string, const int len) {
     char str[1024];
     wcstombs(str, string, 1024);
-    api_send(PACKET_29_VFD, len, str);
+    api_send(PACKET_29_VFD, len, (uint8_t*)str);
 }
 
 void api_send_vfd_sj(const char* string, const int len) {
