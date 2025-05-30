@@ -10,6 +10,7 @@ add_project_arguments(
     language: 'c',
 )
 
+cc = meson.get_compiler('c')
 if cc.get_id() != 'msvc'
     add_project_arguments(
         '-ffunction-sections',
