@@ -4,6 +4,7 @@ EXPORTS
     api_get_version
 	api_init
 	api_stop
+	api_is_initialized
 	api_send
 	api_get_card_switch_state
 	api_get_card_reading_state_and_clear_switch_state

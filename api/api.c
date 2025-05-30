@@ -108,6 +108,17 @@ HRESULT api_init(const char* config_filename) {
     return S_OK;
 }
 
+bool api_is_initialized() {
+    if (!api_cfg.enable || api_socket_thread == NULL) {
+        return false;
+    }
+    DWORD ec = 0;
+    if (!GetExitCodeThread(api_socket_thread, &ec)) {
+        return false;
+    }
+    return ec == STILL_ACTIVE;
+}
+
 DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
     struct sockaddr_in sender_address;
     int sender_addr_size = sizeof(sender_address);

@@ -74,6 +74,12 @@ uint32_t api_get_version();
  */
 HRESULT api_init(const char* config_filename);
 
+/**
+ * Returns true if the API is enabled and initialized.
+ * @return true if the API is enabled and initialized.
+ */
+bool api_is_initialized();
+
 /*
  * Stops the API, threads and sockets.
  */
