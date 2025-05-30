@@ -11,23 +11,27 @@
 
 void api_config_load(
         struct api_config *cfg,
-        const char *filename)
+        const wchar_t *filename)
 {
 
     assert(cfg != NULL);
     assert(filename != NULL);
 
-    cfg->enable = GetPrivateProfileIntA("api", "enable", 0, filename);
-	GetPrivateProfileStringA(
-            "api",
-            "bindAddr",
-            "255.255.255.255",
-            cfg->bindAddr,
-            _countof(cfg->bindAddr),
+    cfg->enable = GetPrivateProfileIntW(L"api", L"enable", 0, filename);
+
+    wchar_t tmp[32];
+	GetPrivateProfileStringW(
+            L"api",
+            L"bindAddr",
+            L"255.255.255.255",
+            tmp,
+            _countof(tmp),
             filename);
-    cfg->log = GetPrivateProfileIntA("api", "log", 1, filename);
-    cfg->port = GetPrivateProfileIntA("api", "port", 5364, filename);
-    cfg->groupId = GetPrivateProfileIntA("api", "groupId", 1, filename);
-    cfg->deviceId = GetPrivateProfileIntA("api", "deviceId", 1, filename);
+    wcstombs(cfg->bindAddr, tmp, sizeof(cfg->bindAddr));
+
+    cfg->log = GetPrivateProfileIntW(L"api", L"log", 1, filename);
+    cfg->port = GetPrivateProfileIntW(L"api", L"port", 5364, filename);
+    cfg->groupId = GetPrivateProfileIntW(L"api", L"groupId", 1, filename);
+    cfg->deviceId = GetPrivateProfileIntW(L"api", L"deviceId", 1, filename);
 
 }

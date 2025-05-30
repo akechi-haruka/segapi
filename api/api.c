@@ -44,7 +44,7 @@ uint32_t api_get_version() {
     return 0x010101;
 }
 
-HRESULT api_init(const char* config_filename) {
+HRESULT api_init(const wchar_t* config_filename) {
     WSADATA wsa;
 
     if (api_socket_thread != NULL) {

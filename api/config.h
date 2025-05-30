@@ -40,4 +40,4 @@ struct api_config {
  */
 void api_config_load(
         struct api_config *cfg,
-        const char *filename);
+        const wchar_t *filename);

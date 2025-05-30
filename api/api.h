@@ -72,7 +72,7 @@ uint32_t api_get_version();
  * @param config_filename config_filename: Path to an .ini file with an "[api]" section.
  * @return HRESULT indicating status.
  */
-HRESULT api_init(const char* config_filename);
+HRESULT api_init(const wchar_t* config_filename);
 
 /**
  * Returns true if the API is enabled and initialized.
