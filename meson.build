@@ -10,12 +10,14 @@ add_project_arguments(
     language: 'c',
 )
 
-add_project_arguments(
-    '-ffunction-sections',
-    '-fdata-sections',
-    '-Wno-unknown-pragmas',
-    language: 'c',
-)
+if cc.get_id() != 'msvc'
+    add_project_arguments(
+        '-ffunction-sections',
+        '-fdata-sections',
+        '-Wno-unknown-pragmas',
+        language: 'c',
+    )
+endif
 
 add_project_link_arguments(
     '-Wl,--enable-stdcall-fixup',
