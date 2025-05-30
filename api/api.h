@@ -186,11 +186,13 @@ bool api_get_reader_blocked_and_clear_switch_state();
 /**
  * Sends a PACKET_29_VFD (UTF-8).
  * @param string The VFD text to send.
+ * @param len The length of the string.
  */
-void api_send_vfd(const wchar_t* string);
+void api_send_vfd(const wchar_t* string, int len);
 
 /**
  * Sends a PACKET_30_VFD_SHIFTJIS (UTF-8).
  * @param string The VFD text to send.
+ * @param len The length of the string.
  */
-void api_send_vfd_sj(const char* string);
+void api_send_vfd_sj(const char* string, int len);
