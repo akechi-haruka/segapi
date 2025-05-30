@@ -23,6 +23,7 @@ enum API_PACKET {
 	PACKET_32_BLOCK_CARD_READER = 32,
     PACKET_33_AIME_RGB = 33,
     PACKET_34_EXIT = 34,
+	PACKET_35_INPUT_BLOCK_STATE = 35,
 };
 
 // Length of the packet header

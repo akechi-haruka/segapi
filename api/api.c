@@ -39,6 +39,8 @@ static bool api_has_vfd_string = false;
 static uint8_t api_vfd_string[200];
 static bool api_card_reader_blocked = false;
 static bool api_card_reader_blocked_switch = false;
+static bool api_has_block_input = false;
+static bool api_block_input_state = false;
 
 uint32_t api_get_version() {
     return 0x010101;
@@ -245,6 +247,9 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             dprintf("segapi: Received Exit packet!\n");
             TerminateProcess(GetCurrentProcess(), PACKET_34_EXIT);
             break;
+        case PACKET_35_INPUT_BLOCK_STATE:
+            api_has_block_input = true;
+            api_block_input_state = data[0];
         default:
             return API_PACKET_ID_UNKNOWN;
     }
@@ -385,4 +390,16 @@ void api_send_vfd_w(const wchar_t* string, const int len) {
 
 void api_send_vfd_sj(const char* string, const int len) {
     api_send(PACKET_30_VFD_SHIFTJIS, len, (uint8_t *) string);
+}
+
+bool api_has_input_block_state() {
+    return api_has_block_input;
+}
+
+bool api_get_input_block_state_and_clear() {
+    if (api_has_block_input) {
+        api_has_block_input = false;
+        return api_block_input_state;
+    }
+    return false;
 }
