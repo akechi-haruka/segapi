@@ -311,13 +311,13 @@ int api_get_and_clear_credits() {
 }
 
 bool api_get_and_clear_service() {
-    bool b = api_is_service_pressed;
+    const bool b = api_is_service_pressed;
     api_is_service_pressed = false;
     return b;
 }
 
 bool api_get_and_clear_test() {
-    bool b = api_is_test_pressed;
+    const bool b = api_is_test_pressed;
     api_is_test_pressed = false;
     return b;
 }
