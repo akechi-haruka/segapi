@@ -6,7 +6,6 @@ add_project_arguments(
     '-DWIN32_LEAN_AND_MEAN',
     '-D_WIN32_WINNT=_WIN32_WINNT_WIN8',
     '-DMINGW_HAS_SECURE_API=1',
-    '-fdiagnostics-color=never',
     language: 'c',
 )
 
@@ -16,19 +15,20 @@ if cc.get_id() != 'msvc'
         '-ffunction-sections',
         '-fdata-sections',
         '-Wno-unknown-pragmas',
+        '-fdiagnostics-color=never',
+        language: 'c',
+    )
+
+    add_project_link_arguments(
+        '-Wl,--enable-stdcall-fixup',
+        '-Wl,--exclude-all-symbols',
+        '-Wl,--gc-sections',
+        '-Wl,-Bstatic',
+        '-static-libgcc',
+        '-static',
         language: 'c',
     )
 endif
-
-add_project_link_arguments(
-    '-Wl,--enable-stdcall-fixup',
-    '-Wl,--exclude-all-symbols',
-    '-Wl,--gc-sections',
-    '-Wl,-Bstatic',
-    '-static-libgcc',
-    '-static',
-    language: 'c',
-)
 
 cc = meson.get_compiler('c')
 

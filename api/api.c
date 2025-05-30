@@ -13,10 +13,9 @@
 #define dprintf_if(...) dprintf(__VA_ARGS__)
 #define ASSERT_PACKET_LENGTH(len, n) if (len < n) { return API_PACKET_INCOMPLETE; }
 
+DWORD __stdcall api_socket_thread_proc(LPVOID ctx);
+
 static struct api_config api_cfg;
-
-static __stdcall DWORD api_socket_thread_proc(LPVOID ctx);
-
 static HANDLE api_socket_thread;
 static SOCKET listen_socket = INVALID_SOCKET;
 static SOCKET send_socket = INVALID_SOCKET;
@@ -123,7 +122,7 @@ bool api_is_initialized() {
     return ec == STILL_ACTIVE;
 }
 
-DWORD __stdcall api_socket_thread_proc([[maybe_unused]] LPVOID ctx) {
+DWORD __stdcall api_socket_thread_proc(LPVOID ctx) {
     struct sockaddr_in sender_address;
     int sender_addr_size = sizeof(sender_address);
 
@@ -212,7 +211,7 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             break;
         case PACKET_30_VFD_SHIFTJIS: {
             int out_len = 200;
-            uint8_t utf8str[out_len];
+            uint8_t utf8str[200];
             if (sj2utf8(data, len, utf8str, &out_len)) {
                 memcpy(api_vfd_string, data, out_len);
                 api_has_vfd_string = true;
@@ -276,7 +275,7 @@ int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     dprintf_if("segapi: Sending Packet: %d\n", id);
 
     const int packetLen = PACKET_HEADER_LEN + len;
-    uint8_t packet[packetLen];
+    uint8_t* packet = (uint8_t*)malloc(packetLen);
 
     packet[PACKET_HEADER_FIELD_ID] = id;
     packet[PACKET_HEADER_FIELD_GROUPID] = api_cfg.groupId;
@@ -284,8 +283,10 @@ int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     packet[PACKET_HEADER_FIELD_LEN] = len;
     memcpy(packet + PACKET_HEADER_LEN, data, len);
 
-    if (sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address)) ==
-        SOCKET_ERROR) {
+    int ret = sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address));
+    free(packet);
+
+    if (ret == SOCKET_ERROR) {
         dprintf("segapi: sendto failed with error: %d\n", WSAGetLastError());
         return API_SOCKET_OPERATION_FAIL;
     }
