@@ -3,7 +3,6 @@ api_lib = shared_library(
     name_prefix : '',
     include_directories : inc,
     implicit_include_directories : false,
-    c_pch : '../precompiled.h',
     vs_module_defs : 'exports.def',
     dependencies : [
         ws2_lib

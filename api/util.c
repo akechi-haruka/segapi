@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdint.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include "util.h"
 
@@ -26,5 +27,5 @@ bool sj2utf8(const uint8_t* indata, int inlen, uint8_t* outdata, int* outlen){
             }
         }
     }
-    return NULL;
+    return false;
 }

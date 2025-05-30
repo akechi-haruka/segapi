@@ -1,5 +1,5 @@
 Segatools API standalone implementation
-2024 Haruka
+2024-2025 Haruka
 Licensed under MIT.
 
 --------------------------------

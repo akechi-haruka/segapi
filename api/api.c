@@ -9,6 +9,8 @@
 #include "dprintf.h"
 #include "util.h"
 
+#define dprintf_if(...) dprintf(__VA_ARGS__)
+
 static struct api_config api_cfg;
 
 static __stdcall DWORD api_socket_thread_proc(LPVOID ctx);
@@ -16,9 +18,9 @@ static __stdcall DWORD api_socket_thread_proc(LPVOID ctx);
 static HANDLE api_socket_thread;
 static SOCKET listen_socket = INVALID_SOCKET;
 static SOCKET send_socket = INVALID_SOCKET;
-static struct sockaddr_in send_addr;
-static struct sockaddr_in recv_addr;
-static bool threadExitFlag = false;
+static struct sockaddr_in send_address;
+static struct sockaddr_in receive_address;
+static bool thread_exit_flag = false;
 
 static bool api_card_state_switch = false;
 static bool api_card_reading_state = false;
@@ -28,9 +30,9 @@ static int api_credits = 0;
 static bool api_is_test_pressed = false;
 static bool api_is_service_pressed = false;
 static bool api_has_card_mifare = false;
-static uint8_t api_cardid_mifare[10];
+static uint8_t api_card_id_mifare[10];
 static bool api_has_card_felica = false;
-static uint8_t api_cardid_felica[8];
+static uint8_t api_card_id_felica[8];
 static bool api_has_sequence = false;
 static uint8_t api_sequence = 0;
 static bool api_has_vfd_string = false;
@@ -38,41 +40,41 @@ static uint8_t api_vfd_string[200];
 static bool api_card_reader_blocked = false;
 static bool api_card_reader_blocked_switch = false;
 
-uint32_t api_get_version(){
+uint32_t api_get_version() {
     return 0x010101;
 }
 
 HRESULT api_init(const char* config_filename) {
-
     WSADATA wsa;
 
     if (api_socket_thread != NULL) {
-        dprintf("API: already running\n");
+        dprintf("segapi: already running\n");
         return S_FALSE;
     }
 
     api_config_load(&api_cfg, config_filename);
 
     if (!api_cfg.enable) {
-        dprintf("API: disabled\n");
+        dprintf("segapi: disabled\n");
         return S_FALSE;
     }
-    dprintf("API: Initializing using port %d, group %d, device %d\n", api_cfg.port, api_cfg.groupId, api_cfg.deviceId);
+    dprintf("segapi: Initializing using port %d, group %d, device %d\n", api_cfg.port, api_cfg.groupId,
+            api_cfg.deviceId);
 
-    int err = WSAStartup(MAKEWORD(2, 2), &wsa);
+    const int err = WSAStartup(MAKEWORD(2, 2), &wsa);
     if (err != 0) {
-        dprintf("API: Failed to initialize, error %d\n", err);
+        dprintf("segapi: Failed to initialize, error %d\n", err);
         return E_FAIL;
     }
 
     listen_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (listen_socket == INVALID_SOCKET) {
-        dprintf("API: Failed to open listen socket: %d\n", WSAGetLastError());
+        dprintf("segapi: Failed to open listen socket: %d\n", WSAGetLastError());
         return E_FAIL;
     }
 
-    if (api_cfg.port == 0){
-        dprintf("API: port is null??\n");
+    if (api_cfg.port == 0) {
+        dprintf("segapi: port is null??\n");
         return E_FAIL;
     }
 
@@ -80,58 +82,53 @@ HRESULT api_init(const char* config_filename) {
     setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(listen_socket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt));
 
-    recv_addr.sin_family = AF_INET;
-    recv_addr.sin_port = htons(api_cfg.port);
-    recv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    receive_address.sin_family = AF_INET;
+    receive_address.sin_port = htons(api_cfg.port);
+    receive_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    if (bind(listen_socket, (SOCKADDR *) &recv_addr, sizeof(recv_addr)) == SOCKET_ERROR) {
-        dprintf("API: bind (recv) failed with error %d\n", WSAGetLastError());
+    if (bind(listen_socket, (SOCKADDR *) &receive_address, sizeof(receive_address)) == SOCKET_ERROR) {
+        dprintf("segapi: bind (recv) failed with error %d\n", WSAGetLastError());
         return E_FAIL;
     }
 
     send_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (send_socket == INVALID_SOCKET) {
-        dprintf("API: Failed to open send socket: %d\n", WSAGetLastError());
+        dprintf("segapi: Failed to open send socket: %d\n", WSAGetLastError());
         return E_FAIL;
     }
     setsockopt(send_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     setsockopt(send_socket, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt));
-    send_addr.sin_family = AF_INET;
-    send_addr.sin_port = htons(api_cfg.port);
-    send_addr.sin_addr.s_addr = inet_addr(api_cfg.bindAddr);
+    send_address.sin_family = AF_INET;
+    send_address.sin_port = htons(api_cfg.port);
+    send_address.sin_addr.s_addr = inet_addr(api_cfg.bindAddr);
 
-    threadExitFlag = false;
+    thread_exit_flag = false;
     api_socket_thread = CreateThread(NULL, 0, api_socket_thread_proc, NULL, 0, NULL);
 
     return S_OK;
 }
 
 DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
-    struct sockaddr_in sender_addr;
-    int sender_addr_size = sizeof(sender_addr);
+    struct sockaddr_in sender_address;
+    int sender_addr_size = sizeof(sender_address);
 
     int err = SOCKET_ERROR;
     uint8_t buf[PACKET_MAX_SIZE];
 
-    while (!threadExitFlag) {
-
-        if (recvfrom(listen_socket, (char*)buf, PACKET_MAX_SIZE, 0, (SOCKADDR *) &sender_addr, &sender_addr_size) != SOCKET_ERROR) {
-            uint8_t id = buf[PACKET_HEADER_FIELD_ID];
-            uint8_t group = buf[PACKET_HEADER_FIELD_GROUPID];
-            uint8_t device = buf[PACKET_HEADER_FIELD_MACHINEID];
+    while (!thread_exit_flag) {
+        if (recvfrom(listen_socket, buf, PACKET_MAX_SIZE, 0, (SOCKADDR *) &sender_address, &sender_addr_size) != SOCKET_ERROR) {
+            const uint8_t id = buf[PACKET_HEADER_FIELD_ID];
+            const uint8_t group = buf[PACKET_HEADER_FIELD_GROUPID];
+            const uint8_t device = buf[PACKET_HEADER_FIELD_MACHINEID];
             uint8_t len = buf[PACKET_HEADER_FIELD_LEN];
 
             if (group != api_cfg.groupId) {
-                if (api_cfg.log) {
-                    dprintf("API: Received packet designated for group %d, but we're %d\n", group, api_cfg.groupId);
-                }
+                dprintf_if("segapi: Received packet designated for group %d, but we're %d\n", group, api_cfg.groupId);
                 continue;
             }
 
             if (device == api_cfg.deviceId) {
-                if (api_cfg.log) {
-                    dprintf("API: Received packet from ourselves\n");
-                }
+                dprintf_if("segapi: Received packet from ourselves\n");
                 continue;
             }
 
@@ -139,30 +136,27 @@ DWORD __stdcall api_socket_thread_proc(__attribute__((unused)) LPVOID ctx) {
             uint8_t data[PACKET_CONTENT_MAX_SIZE];
             memcpy(data, buf + PACKET_HEADER_LEN, len);
 
-            if (api_cfg.log) {
-                dprintf("API: Received Packet: %d\n", id);
-            }
+            dprintf_if("segapi: Received packet: %d\n", id);
             api_parse(id, len, data);
         } else {
             err = WSAGetLastError();
-            dprintf("API: Receive error: %d\n", err);
-            threadExitFlag = true;
+            dprintf("segapi: Receive error: %d\n", err);
+            thread_exit_flag = true;
         }
     }
 
-    dprintf("API: Exiting\n");
-    threadExitFlag = true;
+    dprintf("segapi: Exiting\n");
+    thread_exit_flag = true;
 
     closesocket(listen_socket);
     closesocket(send_socket);
     WSACleanup();
 
-    return 0;
+    return err;
 }
 
-int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
-
-    uint8_t ack_out = {id};
+int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
+    const uint8_t ack_out = {id};
     switch (id) {
         case PACKET_20_PING:
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
@@ -186,12 +180,12 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_25_CARD_FELICA:
-            memcpy(api_cardid_felica, data, min(len, sizeof(api_cardid_felica)));
+            memcpy(api_card_id_felica, data, min(len, sizeof(api_card_id_felica)));
             api_has_card_felica = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_26_CARD_AIME:
-            memcpy(api_cardid_mifare, data, min(len, sizeof(api_cardid_mifare)));
+            memcpy(api_card_id_mifare, data, min(len, sizeof(api_card_id_mifare)));
             api_has_card_mifare = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
@@ -201,13 +195,13 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_30_VFD_SHIFTJIS: {
-            int outlen = 200;
-            uint8_t utf8str[outlen];
-            if (sj2utf8(data, len, utf8str, &outlen)) {
-                memcpy(api_vfd_string, data, outlen);
+            int out_len = 200;
+            uint8_t utf8str[out_len];
+            if (sj2utf8(data, len, utf8str, &out_len)) {
+                memcpy(api_vfd_string, data, out_len);
                 api_has_vfd_string = true;
             } else {
-                dprintf("API: VFD UTF conversion failed\n");
+                dprintf("segapi: VFD UTF conversion failed\n");
             }
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
@@ -218,17 +212,13 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_31_SET_CARD_READING_STATE:
-            if (api_cfg.log) {
-                dprintf("API: Set card read state: %d\n", data[0]);
-            }
+            dprintf_if("segapi: Set card read state: %d\n", data[0]);
             api_card_reading_state = data[0];
             api_card_state_switch = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_32_BLOCK_CARD_READER:
-            if (api_cfg.log) {
-                dprintf("API: Set card reader blocked: %d\n", data[0]);
-            }
+            dprintf_if("segapi: Set card reader blocked: %d\n", data[0]);
             api_card_reader_blocked = data[0];
             api_card_reader_blocked_switch = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
@@ -241,7 +231,7 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_34_EXIT:
-            dprintf("API: Received Exit packet!\n");
+            dprintf("segapi: Received Exit packet!\n");
             TerminateProcess(GetCurrentProcess(), PACKET_34_EXIT);
             break;
         default:
@@ -251,22 +241,19 @@ int api_parse(enum API_PACKET id, uint8_t len, const uint8_t *data) {
     return API_COMMAND_OK;
 }
 
-int api_send(enum API_PACKET id, uint8_t len, const uint8_t *data) {
-
+int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     if (!api_cfg.enable) {
         return API_DISABLED;
     }
-    if (threadExitFlag) {
+    if (thread_exit_flag) {
         return API_STATE_ERROR;
     }
     if (len > PACKET_CONTENT_MAX_SIZE) {
         return API_PACKET_TOO_LONG;
     }
-    if (api_cfg.log) {
-        dprintf("API: Sending Packet: %d\n", id);
-    }
+    dprintf_if("segapi: Sending Packet: %d\n", id);
 
-    int packetLen = PACKET_HEADER_LEN + len;
+    const int packetLen = PACKET_HEADER_LEN + len;
     uint8_t packet[packetLen];
 
     packet[PACKET_HEADER_FIELD_ID] = id;
@@ -275,8 +262,9 @@ int api_send(enum API_PACKET id, uint8_t len, const uint8_t *data) {
     packet[PACKET_HEADER_FIELD_LEN] = len;
     memcpy(packet + PACKET_HEADER_LEN, data, len);
 
-    if (sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_addr, sizeof(send_addr)) == SOCKET_ERROR) {
-        dprintf("API: sendto failed with error: %d\n", WSAGetLastError());
+    if (sendto(send_socket, packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address)) ==
+        SOCKET_ERROR) {
+        dprintf("segapi: sendto failed with error: %d\n", WSAGetLastError());
         return API_SOCKET_OPERATION_FAIL;
     }
 
@@ -284,8 +272,8 @@ int api_send(enum API_PACKET id, uint8_t len, const uint8_t *data) {
 }
 
 void api_stop() {
-    dprintf("API: shutdown\n");
-    threadExitFlag = true;
+    dprintf("segapi: shutdown\n");
+    thread_exit_flag = true;
     closesocket(listen_socket);
     closesocket(send_socket);
     WaitForSingleObject(api_socket_thread, INFINITE);
@@ -303,88 +291,83 @@ bool api_get_card_reading_state_and_clear_switch_state() {
 }
 
 uint8_t* api_get_aime_rgb_and_clear() {
-    if (api_aime_rgb_set){
+    if (api_aime_rgb_set) {
         api_aime_rgb_set = false;
         return api_aime_rgb;
-    } else {
-        return NULL;
     }
+    return NULL;
 }
 
-void api_block_card_reader(bool b) {
+void api_block_card_reader(const bool b) {
     uint8_t data[1];
     data[0] = b;
     api_send(PACKET_32_BLOCK_CARD_READER, 1, data);
 }
 
-int api_get_and_clear_credits(){
-   int i = api_credits;
-   api_credits = 0;
-   return i;
+int api_get_and_clear_credits() {
+    const int i = api_credits;
+    api_credits = 0;
+    return i;
 }
 
-bool api_get_and_clear_service(){
+bool api_get_and_clear_service() {
     bool b = api_is_service_pressed;
     api_is_service_pressed = false;
     return b;
 }
 
-bool api_get_and_clear_test(){
+bool api_get_and_clear_test() {
     bool b = api_is_test_pressed;
     api_is_test_pressed = false;
     return b;
 }
 
-uint8_t* api_get_and_clear_card_mifare(){
-    if (api_has_card_mifare){
+uint8_t* api_get_and_clear_card_mifare() {
+    if (api_has_card_mifare) {
         api_has_card_mifare = false;
-        return api_cardid_mifare;
-    } else {
-        return NULL;
+        return api_card_id_mifare;
     }
+    return NULL;
 }
 
-uint8_t* api_get_and_clear_card_felica(){
-    if (api_has_card_felica){
+uint8_t* api_get_and_clear_card_felica() {
+    if (api_has_card_felica) {
         api_has_card_felica = false;
-        return api_cardid_felica;
-    } else {
-        return NULL;
+        return api_card_id_felica;
     }
+    return NULL;
 }
 
-uint8_t api_get_and_clear_sequence(){
-    if (api_has_sequence){
+uint8_t api_get_and_clear_sequence() {
+    if (api_has_sequence) {
         api_has_sequence = false;
         return api_sequence;
-    } else {
-        return 0xFF;
     }
+    return 0xFF;
 }
 
-uint8_t* api_get_and_clear_vfd_message(){
-    if (api_has_vfd_string){
+uint8_t* api_get_and_clear_vfd_message() {
+    if (api_has_vfd_string) {
         api_has_vfd_string = false;
         return api_vfd_string;
-    } else {
-        return NULL;
     }
+    return NULL;
 }
 
-bool api_get_reader_blocked_switch_state(){
+bool api_get_reader_blocked_switch_state() {
     return api_card_reader_blocked_switch;
 }
 
-bool api_get_reader_blocked_and_clear_switch_state(){
+bool api_get_reader_blocked_and_clear_switch_state() {
     return api_card_reader_blocked;
 }
 
-void api_send_vfd(const wchar_t* string){
+void api_send_vfd(const wchar_t* string) {
     char str[1024];
     wcstombs(str, string, 1024);
-    api_send(PACKET_29_VFD, strlen(str), (uint8_t*)str);
+    api_send(PACKET_29_VFD, strlen(str), str);
 }
 
-void api_send_vfd_sj(const char* string){
-    api_send(PACKET_30_VFD_SHIFTJIS, strlen(string), (uint8_t*)string);
+void api_send_vfd_sj(const char* string) {
+    api_send(PACKET_30_VFD_SHIFTJIS, strlen(string), (uint8_t *) string);
 }

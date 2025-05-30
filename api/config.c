@@ -27,7 +27,7 @@ void api_config_load(
             filename);
     cfg->log = GetPrivateProfileIntA("api", "log", 1, filename);
     cfg->port = GetPrivateProfileIntA("api", "port", 5364, filename);
-    cfg->groupId = GetPrivateProfileIntA("api", "group_id", 1, filename);
-    cfg->deviceId = GetPrivateProfileIntA("api", "device_id", 1, filename);
+    cfg->groupId = GetPrivateProfileIntA("api", "groupId", 1, filename);
+    cfg->deviceId = GetPrivateProfileIntA("api", "deviceId", 1, filename);
 
 }

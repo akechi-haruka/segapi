@@ -4,6 +4,9 @@
  *
  * https://gmg.hopto.org:82/gmg/wiki/index.php/Segatools_API
  */
+#pragma once
+
+#include <stdbool.h>
 
 enum API_PACKET {
     PACKET_20_PING = 20,
