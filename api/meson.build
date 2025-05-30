@@ -1,9 +1,8 @@
-api_lib = shared_library(
+api_lib = static_library(
     'segapi',
     name_prefix : '',
     include_directories : inc,
     implicit_include_directories : false,
-    vs_module_defs : 'exports.def',
     dependencies : [
         ws2_lib
     ],

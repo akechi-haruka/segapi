@@ -23,9 +23,6 @@ if cc.get_id() != 'msvc'
         '-Wl,--enable-stdcall-fixup',
         '-Wl,--exclude-all-symbols',
         '-Wl,--gc-sections',
-        '-Wl,-Bstatic',
-        '-static-libgcc',
-        '-static',
         language: 'c',
     )
 endif
