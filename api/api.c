@@ -10,6 +10,7 @@
 #include "util.h"
 
 #define dprintf_if(...) dprintf(__VA_ARGS__)
+#define ASSERT_PACKET_LENGTH(len, n) if (len < n) { return API_PACKET_INCOMPLETE; }
 
 static struct api_config api_cfg;
 
@@ -203,6 +204,7 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_28_SEQUENCE:
+            ASSERT_PACKET_LENGTH(len, 1);
             api_sequence = data[0];
             api_has_sequence = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
@@ -225,12 +227,14 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_31_SET_CARD_READING_STATE:
+            ASSERT_PACKET_LENGTH(len, 1);
             dprintf_if("segapi: Set card read state: %d\n", data[0]);
             api_card_reading_state = data[0];
             api_card_state_switch = true;
             api_send(PACKET_21_ACK, sizeof(ack_out), &ack_out);
             break;
         case PACKET_32_BLOCK_CARD_READER:
+            ASSERT_PACKET_LENGTH(len, 1);
             dprintf_if("segapi: Set card reader blocked: %d\n", data[0]);
             api_card_reader_blocked = data[0];
             api_card_reader_blocked_switch = true;
@@ -248,6 +252,7 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             TerminateProcess(GetCurrentProcess(), PACKET_34_EXIT);
             break;
         case PACKET_35_INPUT_BLOCK_STATE:
+            ASSERT_PACKET_LENGTH(len, 1);
             api_has_block_input = true;
             api_block_input_state = data[0];
         default:

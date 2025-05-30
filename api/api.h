@@ -59,6 +59,8 @@ enum API_PACKET {
 #define API_PACKET_ID_UNKNOWN (-3)
 // Socket error
 #define API_SOCKET_OPERATION_FAIL (-4)
+// Packet length was less than required number of bytes
+#define API_PACKET_INCOMPLETE (-5)
 
 /*
  * Get the current API version.
