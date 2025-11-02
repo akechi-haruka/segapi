@@ -21,5 +21,6 @@ EXPORTS
 	api_get_reader_blocked_and_clear_switch_state
 	api_send_vfd
 	api_send_vfd_sj
+	api_send_vfd_w
 	api_has_input_block_state
 	api_get_input_block_state_and_clear
