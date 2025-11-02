@@ -255,6 +255,7 @@ int api_parse(const enum API_PACKET id, const uint8_t len, const uint8_t* data) 
             ASSERT_PACKET_LENGTH(len, 1);
             api_has_block_input = true;
             api_block_input_state = data[0];
+            break;
         default:
             return API_PACKET_ID_UNKNOWN;
     }

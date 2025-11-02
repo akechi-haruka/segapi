@@ -5,6 +5,7 @@
  * https://gmg.hopto.org:82/gmg/wiki/index.php/Segatools_API
  */
 #pragma once
+#pragma pack(1)
 
 #include <stdbool.h>
 
@@ -24,6 +25,12 @@ enum API_PACKET {
     PACKET_33_AIME_RGB = 33,
     PACKET_34_EXIT = 34,
 	PACKET_35_INPUT_BLOCK_STATE = 35,
+	PACKET_36_ERROR = 36,
+};
+
+struct api_error_t {
+	uint8_t type;
+	uint8_t code;
 };
 
 // Length of the packet header
