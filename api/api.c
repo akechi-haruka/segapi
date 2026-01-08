@@ -10,6 +10,10 @@
 #include "dprintf.h"
 #include "util.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#define UNUSED __attribute__ ((unused))
+#endif
+
 #define dprintf_if(...) dprintf(__VA_ARGS__)
 #define ASSERT_PACKET_LENGTH(len, n) if (len < n) { return API_PACKET_INCOMPLETE; }
 
@@ -43,7 +47,7 @@ static bool api_card_reader_blocked_switch = false;
 static bool api_has_block_input = false;
 static bool api_block_input_state = false;
 
-uint32_t api_get_version() {
+uint32_t api_get_version(void) {
     return 0x010101;
 }
 
@@ -111,7 +115,7 @@ HRESULT api_init(const wchar_t* config_filename) {
     return S_OK;
 }
 
-bool api_is_initialized() {
+bool api_is_initialized(void) {
     if (!api_cfg.enable || api_socket_thread == NULL) {
         return false;
     }
@@ -122,7 +126,7 @@ bool api_is_initialized() {
     return ec == STILL_ACTIVE;
 }
 
-DWORD __stdcall api_socket_thread_proc(LPVOID ctx) {
+DWORD __stdcall api_socket_thread_proc(UNUSED LPVOID ctx) {
     struct sockaddr_in sender_address;
     int sender_addr_size = sizeof(sender_address);
 
@@ -284,7 +288,7 @@ int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     packet[PACKET_HEADER_FIELD_LEN] = len;
     memcpy(packet + PACKET_HEADER_LEN, data, len);
 
-    int ret = sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address));
+    const int ret = sendto(send_socket, (char*)packet, packetLen, 0, (SOCKADDR *) &send_address, sizeof(send_address));
     free(packet);
 
     if (ret == SOCKET_ERROR) {
@@ -295,7 +299,7 @@ int api_send(const enum API_PACKET id, const uint8_t len, const uint8_t* data) {
     return API_COMMAND_OK;
 }
 
-void api_stop() {
+void api_stop(void) {
     dprintf("segapi: shutdown\n");
     thread_exit_flag = true;
     closesocket(listen_socket);
@@ -305,16 +309,16 @@ void api_stop() {
     api_socket_thread = NULL;
 }
 
-bool api_get_card_switch_state() {
+bool api_get_card_switch_state(void) {
     return api_card_state_switch;
 }
 
-bool api_get_card_reading_state_and_clear_switch_state() {
+bool api_get_card_reading_state_and_clear_switch_state(void) {
     api_card_state_switch = false;
     return api_card_reading_state;
 }
 
-uint8_t* api_get_aime_rgb_and_clear() {
+uint8_t* api_get_aime_rgb_and_clear(void) {
     if (api_aime_rgb_set) {
         api_aime_rgb_set = false;
         return api_aime_rgb;
@@ -328,25 +332,25 @@ void api_block_card_reader(const bool b) {
     api_send(PACKET_32_BLOCK_CARD_READER, 1, data);
 }
 
-int api_get_and_clear_credits() {
+int api_get_and_clear_credits(void) {
     const int i = api_credits;
     api_credits = 0;
     return i;
 }
 
-bool api_get_and_clear_service() {
+bool api_get_and_clear_service(void) {
     const bool b = api_is_service_pressed;
     api_is_service_pressed = false;
     return b;
 }
 
-bool api_get_and_clear_test() {
+bool api_get_and_clear_test(void) {
     const bool b = api_is_test_pressed;
     api_is_test_pressed = false;
     return b;
 }
 
-uint8_t* api_get_and_clear_card_mifare() {
+uint8_t* api_get_and_clear_card_mifare(void) {
     if (api_has_card_mifare) {
         api_has_card_mifare = false;
         return api_card_id_mifare;
@@ -354,7 +358,7 @@ uint8_t* api_get_and_clear_card_mifare() {
     return NULL;
 }
 
-uint8_t* api_get_and_clear_card_felica() {
+uint8_t* api_get_and_clear_card_felica(void) {
     if (api_has_card_felica) {
         api_has_card_felica = false;
         return api_card_id_felica;
@@ -362,7 +366,7 @@ uint8_t* api_get_and_clear_card_felica() {
     return NULL;
 }
 
-uint8_t api_get_and_clear_sequence() {
+uint8_t api_get_and_clear_sequence(void) {
     if (api_has_sequence) {
         api_has_sequence = false;
         return api_sequence;
@@ -370,7 +374,7 @@ uint8_t api_get_and_clear_sequence() {
     return 0xFF;
 }
 
-uint8_t* api_get_and_clear_vfd_message() {
+uint8_t* api_get_and_clear_vfd_message(void) {
     if (api_has_vfd_string) {
         api_has_vfd_string = false;
         return api_vfd_string;
@@ -378,11 +382,11 @@ uint8_t* api_get_and_clear_vfd_message() {
     return NULL;
 }
 
-bool api_get_reader_blocked_switch_state() {
+bool api_get_reader_blocked_switch_state(void) {
     return api_card_reader_blocked_switch;
 }
 
-bool api_get_reader_blocked_and_clear_switch_state() {
+bool api_get_reader_blocked_and_clear_switch_state(void) {
     return api_card_reader_blocked;
 }
 
@@ -400,11 +404,11 @@ void api_send_vfd_sj(const char* string, const int len) {
     api_send(PACKET_30_VFD_SHIFTJIS, len, (uint8_t *) string);
 }
 
-bool api_has_input_block_state() {
+bool api_has_input_block_state(void) {
     return api_has_block_input;
 }
 
-bool api_get_input_block_state_and_clear() {
+bool api_get_input_block_state_and_clear(void) {
     if (api_has_block_input) {
         api_has_block_input = false;
         return api_block_input_state;

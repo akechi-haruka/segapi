@@ -5,6 +5,7 @@
  * https://gmg.hopto.org:82/gmg/wiki/index.php/Segatools_API
  */
 #pragma once
+#pragma pack(push, 1)
 
 #include <stdbool.h>
 
@@ -24,6 +25,12 @@ enum API_PACKET {
     PACKET_33_AIME_RGB = 33,
     PACKET_34_EXIT = 34,
 	PACKET_35_INPUT_BLOCK_STATE = 35,
+	PACKET_36_ERROR = 36,
+};
+
+struct api_error_t {
+	uint8_t type;
+	uint8_t code;
 };
 
 // Length of the packet header
@@ -67,7 +74,7 @@ enum API_PACKET {
  *
  * @return 0x010101
  */
-uint32_t api_get_version();
+uint32_t api_get_version(void);
 
 /**
  * Initializes the API, sockets and threads.
@@ -81,12 +88,12 @@ HRESULT api_init(const wchar_t* config_filename);
  * Returns true if the API is enabled and initialized.
  * @return true if the API is enabled and initialized.
  */
-bool api_is_initialized();
+bool api_is_initialized(void);
 
 /*
  * Stops the API, threads and sockets.
  */
-void api_stop();
+void api_stop(void);
 
 /**
  * Handles a received packet.
@@ -112,13 +119,13 @@ int api_send(enum API_PACKET id, uint8_t len, const uint8_t* data);
  * 
  * @return if a PACKET_31_SET_CARD_READING_STATE was received.
  */
-bool api_get_card_switch_state();
+bool api_get_card_switch_state(void);
 
 /**
  * 
  * @return Returns the value of PACKET_31_SET_CARD_READING_STATE and clears its receive flag.
  */
-bool api_get_card_reading_state_and_clear_switch_state();
+bool api_get_card_reading_state_and_clear_switch_state(void);
 
 /**
  * Sends a PACKET_32_BLOCK_CARD_READER.
@@ -130,61 +137,61 @@ void api_block_card_reader(bool b);
  * 
  * @return Returns the value (3 bytes) of a PACKET_33_AIME_RGB and clears its receive flag. NULL if nothing is received.
  */
-uint8_t* api_get_aime_rgb_and_clear();
+uint8_t* api_get_aime_rgb_and_clear(void);
 
 /**
  * 
  * @return Returns the value of a PACKET_24_CREDIT and clears its receive flag. 0 if nothing is received.
  */
-int api_get_and_clear_credits();
+int api_get_and_clear_credits(void);
 
 /**
  * 
  * @return Returns true if a PACKET_23_SERVICE was received and clears its receive flag.
  */
-bool api_get_and_clear_service();
+bool api_get_and_clear_service(void);
 
 /**
  * 
  * @return Returns true if a PACKET_22_TEST was received and clears its receive flag.
  */
-bool api_get_and_clear_test();
+bool api_get_and_clear_test(void);
 
 /**
  * 
  * @return Returns a MIFARE card ID if a PACKET_26_CARD_AIME was received and clears it. NULL otherwise.
  */
-uint8_t* api_get_and_clear_card_mifare();
+uint8_t* api_get_and_clear_card_mifare(void);
 
 /**
  * 
  * @return Returns a MIFARE card ID if a PACKET_25_CARD_FELICA was received and clears it. NULL otherwise.
  */
-uint8_t* api_get_and_clear_card_felica();
+uint8_t* api_get_and_clear_card_felica(void);
 
 /**
  * 
  * @return Returns the sequence state if a PACKET_28_SEQUENCE was received and clears it. 0xFF otherwise.
  */
-uint8_t api_get_and_clear_sequence();
+uint8_t api_get_and_clear_sequence(void);
 
 /**
  * 
  * @return Returns the VFD message if any VFD packet was received. This string is always UTF-8. NULL otherwise.
  */
-uint8_t* api_get_and_clear_vfd_message();
+uint8_t* api_get_and_clear_vfd_message(void);
 
 /**
  * 
  * @return Returns true if a PACKET_32_BLOCK_CARD_READER was received.
  */
-bool api_get_reader_blocked_switch_state();
+bool api_get_reader_blocked_switch_state(void);
 
 /**
  * 
  * @return Returns the value of PACKET_32_BLOCK_CARD_READER if one was received and clears its receive flag.
  */
-bool api_get_reader_blocked_and_clear_switch_state();
+bool api_get_reader_blocked_and_clear_switch_state(void);
 
 /**
  * Sends a PACKET_29_VFD.
@@ -211,10 +218,12 @@ void api_send_vfd_sj(const char* string, int len);
  *
  * @return Returns true if a PACKET_35_INPUT_BLOCK_STATE was received.
  */
-bool api_has_input_block_state();
+bool api_has_input_block_state(void);
 
 /**
  *
  * @return Returns the value of PACKET_35_INPUT_BLOCK_STATE if one was received and clears its receive flag.
  */
-bool api_get_input_block_state_and_clear();
+bool api_get_input_block_state_and_clear(void);
+
+#pragma pack(pop)
