@@ -12,6 +12,8 @@
 
 #if defined(__GNUC__) || defined(__clang__)
 #define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
 #endif
 
 #define dprintf_if(...) dprintf(__VA_ARGS__)
